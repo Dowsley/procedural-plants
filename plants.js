@@ -201,7 +201,7 @@ class Sketch {
       }
 
       if (colorStr.startsWith("rgb")) {
-        let values = colorStr.match(/[\\d.]+/g);
+        let values = colorStr.match(/[\d.]+/g);
         if (values && values.length >= 3) {
           let red = parseFloat(values[0]);
           let green = parseFloat(values[1]);
@@ -257,7 +257,7 @@ class Sketch {
           h = (g - b) / d + (g < b ? 6 : 0);
           break;
         case g:
-          h = (s - r) / d + 2;
+          h = (b - r) / d + 2;
           break;
         case b:
           h = (r - g) / d + 4;
