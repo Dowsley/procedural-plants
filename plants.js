@@ -13,7 +13,8 @@ class Color {
   }
 
   toString() {
-    return `rgba(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)}, ${this.a / 255})`;
+    return `rgba(${Math.round(this.r)},
+    ${Math.round(this.g)}, ${Math.round(this.b)}, ${this.a / 255})`;
   }
 }
 
