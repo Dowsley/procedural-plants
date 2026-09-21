@@ -1,0 +1,23 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #faf8f5;
+}
+
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100dvh;
+  image-rendering: pixelated;
+  cursor: crosshair;
+  -webkit-tap-highlight-color: transparent;
+}
+
+canvas:focus-visible {
+  outline: 1px solid #587848;
+  outline-offset: -1px;
+}
+
+canvas[aria-disabled='true'] {
+  cursor: default;
+}
