@@ -14,10 +14,11 @@ export function createNoise(random: Random): (x: number, y: number) => number {
   const perm = [...permutation, ...permutation];
 
   function contribution(x: number, y: number, gradient: number): number {
-    const weight = 0.5 - x * x - y * y;
-    if (weight <= 0) return 0;
+    let weight = 0.5 - x * x - y * y;
+    if (weight < 0) return 0;
     const [gx, gy] = GRADIENTS[gradient % 12];
-    return weight ** 4 * (gx * x + gy * y);
+    weight *= weight;
+    return weight * weight * (gx * x + gy * y);
   }
 
   return (x, y) => {
@@ -25,8 +26,8 @@ export function createNoise(random: Random): (x: number, y: number) => number {
     const i = Math.floor(x + skew);
     const j = Math.floor(y + skew);
     const unskew = (i + j) * UNSKEW;
-    const x0 = x - i + unskew;
-    const y0 = y - j + unskew;
+    const x0 = x - (i - unskew);
+    const y0 = y - (j - unskew);
     const i1 = x0 > y0 ? 1 : 0;
     const j1 = 1 - i1;
     const ii = i & 255;
@@ -34,6 +35,6 @@ export function createNoise(random: Random): (x: number, y: number) => number {
     const n0 = contribution(x0, y0, perm[ii + perm[jj]]);
     const n1 = contribution(x0 - i1 + UNSKEW, y0 - j1 + UNSKEW, perm[ii + i1 + perm[jj + j1]]);
     const n2 = contribution(x0 - 1 + 2 * UNSKEW, y0 - 1 + 2 * UNSKEW, perm[ii + 1 + perm[jj + 1]]);
-    return 0.5 + 35 * (n0 + n1 + n2);
+    return 70 * (n0 + n1 + n2) * 0.5 + 0.5;
   };
 }

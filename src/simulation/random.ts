@@ -1,6 +1,6 @@
 export type Random = () => number;
 
-/** Each plant has its own stream so planting never changes its neighbors. */
+/** Deterministic random input for reference comparisons and ground texture. */
 export function createRandom(seed: string): Random {
   let state = 2166136261;
   for (let i = 0; i < seed.length; i++) {
@@ -12,10 +12,6 @@ export function createRandom(seed: string): Random {
     value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
     return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
   };
-}
-
-export function pick<T>(random: Random, values: readonly [T, ...T[]]): T {
-  return values[Math.floor(random() * values.length)];
 }
 
 export function between(random: Random, min: number, max: number): number {

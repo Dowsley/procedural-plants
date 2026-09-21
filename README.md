@@ -14,7 +14,7 @@ bun run dev
 Open the local URL printed by Vite. Bun runs the development tools and tests; the garden runs entirely in the browser, with no backend or runtime dependencies. `bun.lock` records dependency versions. Use `bun install --frozen-lockfile` for a reproducible install.
 
 ```sh
-bun test            # Growth, replay, variety, and capacity checks
+bun test            # Compare growth and drawing against the reference
 bun run typecheck   # Strict TypeScript checks
 bun run build       # Typecheck and build into dist/
 bun run preview     # Serve the production build locally
@@ -24,36 +24,48 @@ bun run preview     # Serve the production build locally
 
 - The page is a plain canvas with growing plants and ground. Click or tap to plant at a horizontal position along the soil.
 - Focus the canvas, move with the arrow keys, and press Enter or Space to plant using the keyboard.
-- Reload for another garden. An optional `?seed=` URL parameter reproduces the nine starting plants.
-- A seed reproduces the starting garden, not the history of manually added plants. Repeating the same additions in the same order reproduces those plants too.
-- Gardens hold up to 24 plants. Growth is finite, and a settled garden redraws only when something changes.
+- Reload for another garden. Plant generation uses `Math.random()`.
+- Gardens start with nine plants and hold up to 24 plants.
 - Reduced-motion preferences show fully grown plants without animation. Hidden tabs do not accumulate growth to replay when restored.
 
 ## Project structure
 
 ```text
 src/
-  main.ts                 Canvas interaction and fixed-step animation loop
+  main.ts                 Canvas interaction and 60 Hz animation loop
   styles.css              Plain canvas layout
   simulation/
-    config.ts             Dimensions, growth limits, seed varieties
-    random.ts             Seed hashing and random streams
+    config.ts             Garden dimensions and reference plant constants
+    random.ts             Deterministic input for tests and ground texture
     noise.ts              Two-dimensional simplex noise
-    types.ts              Branch, leaf, and flower data
-    plant.ts              Branching, foliage, flowers, and growth easing
-    garden.ts             Plant collection, layout, and planting limits
+    types.ts              Entity interface and points
+    branch.ts             Branch growth, splitting, and drawing
+    leaf.ts               Leaf growth and drawing
+    flower.ts             Six flower types, cluster growth, and drawing
+    plant.ts              Entity collection and update schedule
+    garden.ts             Plant placement and planting limits
   rendering/
-    renderer.ts           Pixel drawing and cached background scenery
+    color.ts              RGBA color values
+    sketch.ts             Drawing primitives, color conversion, and noise
+    renderer.ts           Viewport composition and ground
 tests/
-  garden.test.ts           Simulation regression tests using bun:test
+  reference.test.ts        Differential tests against reference/plants.js
 reference/
   original.js              Source bundle excerpt
   plants.js                Annotated source implementation
 ```
 
-Simulation code has no DOM dependencies. Rendering does not consume simulation randomness. Each plant owns independent growth and noise streams, so adding a plant cannot alter its neighbors. Growth runs at 30 fixed steps per simulated second, independent of display refresh rate.
+## Reference fidelity
 
-To tune the garden, start with `src/simulation/config.ts`. Plant height and the upward steering bias live in `src/simulation/plant.ts`; colors and flower choices live in `VARIETIES`.
+The application uses TypeScript ports of the reference's branch, leaf, flower, color, noise, and drawing routines. The JavaScript files in `reference/` are preserved byte-for-byte and are not imported by the application.
+
+Each plant runs in the reference's 160 by 240 coordinate space, starts at `(120, 240)` pointing upward, and is translated to its garden position. This preserves the boundary rules and canvas clipping without adding steering or interactions between neighbors. The renderer scales uniformly to fit short viewports and keeps the ground at the bottom of the full-screen canvas. Resizing changes presentation, not growth state.
+
+Plants use the 160-step length limit, original flower palette reduction, spawn probabilities, cluster rules, and drawing passes. The entity list is extended during iteration, so newly created entities update in the same pass. Each plant has a 60 Hz frame counter; the update interval increases every 75 frames, up to six frames. Leaves and flowers retain the reference's interpolation without snapping to full size.
+
+Garden-specific behavior consists of multiple translated plants, planting input, the ground, full-screen layout, and a 24-plant limit. Reduced-motion preferences advance the simulation to a mature still image, and hidden tabs suspend animation. An empty branch can be drawn safely before its first update.
+
+Tests execute the untouched JavaScript reference with controlled random inputs and compare entity state, update timing, noise values, and drawing commands with the TypeScript implementation. All six flower drawing paths are exercised separately.
 
 ## Source
 

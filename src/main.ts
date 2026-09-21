@@ -1,20 +1,17 @@
 import './styles.css';
-import { GROWTH, WORLD } from './simulation/config.ts';
+import { WORLD } from './simulation/config.ts';
 import { Garden } from './simulation/garden.ts';
 import { Renderer } from './rendering/renderer.ts';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#garden');
 if (!canvas) throw new Error('Missing garden canvas.');
 
-const seed = new URL(location.href).searchParams.get('seed')?.slice(0, 64)
-  || crypto.getRandomValues(new Uint32Array(1))[0].toString(36);
-const garden = new Garden(seed);
+const garden = new Garden();
 const renderer = new Renderer(canvas);
 const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
-const step = 1000 / GROWTH.ticksPerSecond;
+const step = 1000 / 60;
 let cursor: number | null = null;
 let lastTime = 0;
-let accumulated = 0;
 let dirty = true;
 let frameId = 0;
 
@@ -25,12 +22,12 @@ const resizeObserver = new ResizeObserver(([entry]) => {
 resizeObserver.observe(canvas);
 
 function settle(): void {
-  while (!garden.settled) garden.update();
+  while (!garden.mature) garden.advanceFrame();
   dirty = true;
 }
 
 function plant(x: number): void {
-  if (!garden.addPlant(x, 'mixed')) return;
+  if (!garden.addPlant(x)) return;
   if (motionPreference.matches) settle();
   dirty = true;
   canvas!.setAttribute('aria-disabled', String(garden.plants.length >= WORLD.maxPlants));
@@ -57,20 +54,16 @@ canvas.addEventListener('focus', () => {
   dirty = true;
 });
 canvas.addEventListener('blur', () => { cursor = null; dirty = true; });
-document.addEventListener('visibilitychange', () => { lastTime = 0; accumulated = 0; });
+document.addEventListener('visibilitychange', () => { lastTime = 0; });
 motionPreference.addEventListener('change', event => { if (event.matches) settle(); });
 
-/** Fixed simulation steps keep shape independent of display refresh rate. */
+/** The reference advances at most one 60 Hz frame per animation callback. */
 function frame(time: number): void {
-  const elapsed = lastTime ? Math.min(time - lastTime, 100) : 0;
-  lastTime = time;
-  if (!document.hidden && !garden.settled) {
-    accumulated += elapsed;
-    while (accumulated >= step) {
-      garden.update();
-      accumulated -= step;
-      dirty = true;
-    }
+  if (!lastTime) lastTime = time;
+  const elapsed = time - lastTime;
+  if (!document.hidden && !motionPreference.matches && elapsed > step) {
+    lastTime = time - (elapsed % step);
+    dirty = garden.advanceFrame() || dirty;
   }
   if (dirty) {
     renderer.draw(garden, cursor);

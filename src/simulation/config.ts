@@ -1,18 +1,24 @@
+import type { Random } from './random.ts';
+
 export const WORLD = { width: 640, height: 320, ground: 278, maxPlants: 24, initialPlants: 9 } as const;
-export const GROWTH = { ticksPerSecond: 30, splitChance: 0.04, maxSplits: 4, minBranchLength: 16, maxClusterPoints: 24 } as const;
+export const PLANT = { width: 160, height: 240, rootX: 120, rootY: 240 } as const;
+export const MAX_BRANCH_LENGTH = 160;
+export const GRAVITY = 0;
 
-export type Variety = 'mixed' | 'cosmos' | 'bluebell' | 'marigold';
-export type FlowerKind = 'cross' | 'radial' | 'simple' | 'square' | 'cluster' | 'bell';
-
-interface VarietyConfig {
-  label: string;
-  colors: readonly [string, ...string[]];
-  flowers: readonly [FlowerKind, ...FlowerKind[]];
+export function createPalette(random: Random = Math.random): string[] {
+  const colors = ['#ff69b4', '#ff6450ff', '#fee65aff', '#b6c2ffff', '#8570dbff', '#bf3de0ff', '#0b5e16ff'];
+  if (random() < 0.95) {
+    const numColors = Math.round(random() * 0.6) + 2;
+    while (colors.length > numColors) colors.splice(Math.floor(random() * colors.length), 1);
+  }
+  return colors;
 }
 
-export const VARIETIES: Record<Variety, VarietyConfig> = {
-  mixed: { label: 'Wild mix', colors: ['#d88b9f', '#e6b64e', '#a49bc7', '#d57559'], flowers: ['cross', 'radial', 'simple', 'square', 'cluster', 'bell'] },
-  cosmos: { label: 'Cosmos', colors: ['#d17a91', '#e5a1ae', '#bd647f'], flowers: ['cross', 'radial'] },
-  bluebell: { label: 'Bluebells', colors: ['#9388bc', '#a9a3d1', '#787aaa'], flowers: ['bell'] },
-  marigold: { label: 'Marigolds', colors: ['#e6b64e', '#d7973d', '#ecc978'], flowers: ['square', 'radial'] },
-};
+export const FLOWER_TYPES = [
+  { size: 2, life: 5 },
+  { size: 1, life: 0 },
+  { size: 1, life: 10 },
+  { size: 2, life: 5 },
+  { size: 3, life: 10 },
+  { size: 3, life: 0 },
+] as const;
